@@ -1,0 +1,37 @@
+---
+- hosts: all
+  become: yes
+  
+  tasks:
+  - name: Update and upgrade apt packages
+    apt:
+      upgrade: yes
+      update_cache: yes
+      cache_valid_time: 86400 #One day
+
+  - name: install JDK 11
+    apt:
+      name: openjdk-11-jdk
+      state: present
+
+  - name: create /opt/tomcat directory
+    file:
+      path: /opt/tomcat
+      state: directory
+      mode: 0755
+
+  - name: download & unarchive
+    unarchive:
+      src: http://apache.cs.utah.edu/tomcat/tomcat-9/v9.0.52/bin/apache-tomcat-9.0.52.tar.gz
+      dest: /opt/tomcat
+      remote_src: yes
+      extra_opts: [--strip-components=1]
+
+  - name: Copy the tomcat-users.xml file from master to remote host
+    copy: src=tomcat-users.xml dest=/opt/tomcat/conf/
+
+  - name: Copy the context.xml file from master to remote host
+    copy: src=context.xml dest=/opt/tomcat/webapps/manager/META-INF/
+  
+  - name: Start and enable Tomcat service
+    shell: nohup /opt/tomcat/bin/startup.sh
